@@ -1,51 +1,51 @@
-// import simpleRestProvider from "ra-data-simple-rest";
-//
-// export const dataProvider = simpleRestProvider(
-//   import.meta.env.VITE_SIMPLE_REST_URL,
-// );
-
-// src/dataProvider.ts
 import {
     DataProvider,
-    // DeleteManyParams,
-    // DeleteManyResult,
-    fetchUtils, PaginationPayload,
-    // UpdateManyParams,
-    // UpdateManyResult
+    fetchUtils
 } from 'react-admin';
 import { stringify } from 'query-string';
-//import {stringify} from "node:querystring";
-//import {json} from "node:stream/consumers";
 
 const apiUrl = 'http://localhost:5227/api';
 const httpClient = fetchUtils.fetchJson;
 
 export const dataProvider: DataProvider = {
     getList: async (resource, params) => {
-        const { page, perPage }  = params.pagination;
-        const { field, order } = params.sort;
+        const { page = 1, perPage = 10 } = params.pagination || {};
+        const { field = 'id', order = 'ASC' } = params.sort || {};
 
         const query = {
-            _page: page,
-            _perPage: perPage,
-            _sort: field,
-            _order: order.toLowerCase(),
-            ...fetchUtils.flattenObject(params.filter),
+            page: page,
+            pageSize: perPage,
+            sortField: field,
+            sortOrder: order,
+            ...(params.filter || {})
         };
+
+        Object.keys(query).forEach(key => {
+            if (query[key] === undefined || query[key] === '') {
+                delete query[key];
+            }
+        });
 
         const url = `${apiUrl}/${resource}?${stringify(query)}`;
-        const { json } = await httpClient(url);
 
-        return {
-            data: json.data,
-            total: json.total,
-        };
+        try {
+            const { json } = await httpClient(url);
+            return {
+                data: json.data,
+                total: json.total,
+            };
+        } catch (error) {
+            console.error('Error in getList:', error);
+            throw error;
+        }
     },
+
 
     getOne: async (resource, params) => {
         const url = `${apiUrl}/${resource}/${params.id}`;
         const { json } = await httpClient(url);
-        return { data: json.data };
+
+        return json;
     },
 
     create: async (resource, params) => {
@@ -54,7 +54,7 @@ export const dataProvider: DataProvider = {
             method: 'POST',
             body: JSON.stringify(params.data),
         });
-        return { data: json.data };
+        return json;
     },
 
     update: async (resource, params) => {
@@ -63,15 +63,20 @@ export const dataProvider: DataProvider = {
             method: 'PUT',
             body: JSON.stringify(params.data),
         });
-        return { data: json.data };
+
+        return json;
     },
 
     delete: async (resource, params) => {
-        const url = `${apiUrl}/${resource}/${params.id}`;
+        const url = `${apiUrl}/${resource}/${params.id}/softDelete`;
         const { json } = await httpClient(url, {
-            method: 'DELETE',
+            method: 'PUT',
+            headers: new Headers({
+                'Content-Type': 'application/json',
+            }),
+            body: JSON.stringify({}),
         });
-        return { data: json.data };
+        return { data: json };
     },
 
     // Опціонально - для підтримки фільтрів у списках
