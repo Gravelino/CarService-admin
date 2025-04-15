@@ -12,12 +12,20 @@ export const dataProvider: DataProvider = {
         const { page = 1, perPage = 10 } = params.pagination || {};
         const { field = 'id', order = 'ASC' } = params.sort || {};
 
+        let sortField = field;
+
+        if (field !== 'id') {
+            sortField = field.charAt(0).toUpperCase() + field.slice(1);
+        } else {
+            sortField = 'Id';
+        }
+
         const query = {
             page: page,
             pageSize: perPage,
-            sortField: field,
-            sortOrder: order,
-            ...(params.filter || {})
+            sort: sortField,
+            order: order,
+            ...params.filter
         };
 
         Object.keys(query).forEach(key => {
@@ -30,9 +38,10 @@ export const dataProvider: DataProvider = {
 
         try {
             const { json } = await httpClient(url);
+
             return {
-                data: json.data,
-                total: json.total,
+                data: json.data || json.items || [],
+                total: json.total || json.data?.length || json.items?.length || 0,
             };
         } catch (error) {
             console.error('Error in getList:', error);
@@ -49,22 +58,56 @@ export const dataProvider: DataProvider = {
     },
 
     create: async (resource, params) => {
-        const url = `${apiUrl}/${resource}`;
-        const { json } = await httpClient(url, {
-            method: 'POST',
-            body: JSON.stringify(params.data),
-        });
-        return json;
+        try {
+            const url = `${apiUrl}/${resource}`;
+            const { json } = await httpClient(url, {
+                method: 'POST',
+                body: JSON.stringify(params.data),
+            });
+
+            if (typeof json === 'number') {
+                return {
+                    data: {
+                        ...params.data,
+                        id: json
+                    }
+                };
+            }
+
+            if (json && !json.data && !json.id) {
+                return {
+                    data: {
+                        ...params.data,
+                        id: json.id || json
+                    }
+                };
+            }
+
+            return { data: json.data || json };
+        } catch (error) {
+            console.error('Error in create:', error);
+            throw error;
+        }
     },
 
     update: async (resource, params) => {
         const url = `${apiUrl}/${resource}/${params.id}`;
-        const { json } = await httpClient(url, {
-            method: 'PUT',
-            body: JSON.stringify(params.data),
-        });
+        try {
+            const { json } = await httpClient(url, {
+                method: 'PUT',
+                body: JSON.stringify(params.data),
+            });
 
-        return json;
+            if (json && typeof json === 'object') {
+                return { data: json.data || json };
+            }
+            return {
+                data: { ...params.data, id: params.id }
+            };
+        } catch (error) {
+            console.error('Error in update:', error);
+            throw error;
+        }
     },
 
     delete: async (resource, params) => {
@@ -79,7 +122,6 @@ export const dataProvider: DataProvider = {
         return { data: json };
     },
 
-    // Опціонально - для підтримки фільтрів у списках
     getMany: async (resource, params) => {
         const query = {
             id: params.ids,
@@ -111,7 +153,6 @@ export const dataProvider: DataProvider = {
         };
     },
     deleteMany: async (resource, params) => {
-        // Відправляємо запити на видалення паралельно
         const responses = await Promise.all(
             params.ids.map(id =>
                 httpClient(`${apiUrl}/${resource}/${id}`, {
@@ -124,7 +165,6 @@ export const dataProvider: DataProvider = {
     },
 
     updateMany: async (resource, params) => {
-        // Відправляємо запити на оновлення паралельно
         const responses = await Promise.all(
             params.ids.map(id =>
                 httpClient(`${apiUrl}/${resource}/${id}`, {
