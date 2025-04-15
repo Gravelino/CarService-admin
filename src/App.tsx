@@ -17,9 +17,14 @@ import { CategoryServiceEdit } from "./components/categoryService/CategoryServic
 import { CategoryServiceCreate } from "./components/categoryService/CategoryServiceCreate";
 import { CategoryServiceShow } from "./components/categoryService/CategoryServiceShow";
 
+import { WorkerList } from "./components/workers/WorkerList.tsx";
+import { WorkerEdit } from "./components/workers/WorkerEdit";
+import { WorkerShow } from "./components/workers/WorkerShow";
+
 import PeopleIcon from '@mui/icons-material/People';
 import CategoryIcon from '@mui/icons-material/Category';
 import HandymanIcon from '@mui/icons-material/Handyman';
+import EngineeringIcon from '@mui/icons-material/Engineering';
 
 export const App = () => (
   <Admin
@@ -54,10 +59,16 @@ export const App = () => (
       icon={HandymanIcon}
       options={{ label: 'Services' }}
     />
-    <Resource name="Services" list={ListGuesser} edit={EditGuesser} />
     <Resource name="Visits" list={ListGuesser} edit={EditGuesser} />
-    <Resource name="Payments" list={ListGuesser} edit={EditGuesser} />
-    <Resource name="Workers" list={ListGuesser} edit={EditGuesser} />
+    {/*<Resource name="Payments" list={ListGuesser} edit={EditGuesser} />*/}
+    <Resource
+      name="Workers"
+      list={WorkerList}
+      edit={WorkerEdit}
+      show={WorkerShow}
+      icon={EngineeringIcon}
+      options={{ label: 'Workers' }}
+    />
   </Admin>
 );
 
