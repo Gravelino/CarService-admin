@@ -21,10 +21,16 @@ import { WorkerList } from "./components/workers/WorkerList.tsx";
 import { WorkerEdit } from "./components/workers/WorkerEdit";
 import { WorkerShow } from "./components/workers/WorkerShow";
 
+import { ToolList } from "./components/tools/ToolList";
+import { ToolEdit } from "./components/tools/ToolEdit";
+import { ToolShow } from "./components/tools/ToolShow";
+import { ToolCreate } from "./components/tools/ToolCreate";
+
 import PeopleIcon from '@mui/icons-material/People';
 import CategoryIcon from '@mui/icons-material/Category';
 import HandymanIcon from '@mui/icons-material/Handyman';
 import EngineeringIcon from '@mui/icons-material/Engineering';
+import ToolIcon from '@mui/icons-material/Build';
 
 export const App = () => (
   <Admin
@@ -68,6 +74,15 @@ export const App = () => (
       show={WorkerShow}
       icon={EngineeringIcon}
       options={{ label: 'Workers' }}
+    />
+    <Resource
+      name="Tools"
+      list={ToolList}
+      edit={ToolEdit}
+      create={ToolCreate}
+      show={ToolShow}
+      icon={ToolIcon}
+      options={{ label: 'Tools' }}
     />
   </Admin>
 );
