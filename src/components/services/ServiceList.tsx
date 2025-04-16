@@ -12,7 +12,11 @@ import {
     TopToolbar,
     CreateButton,
     SortButton,
+    useDataProvider,
+    RaRecord,
+    FunctionField,
 } from 'react-admin';
+import { useEffect, useState } from 'react';
 
 const ServiceFilters = [
     <TextInput key="nameLike" label="Search by name" source="NameFilter" alwaysOn />,
@@ -34,6 +38,76 @@ const ServiceEmpty = () => (
         <CreateButton label="Create a service" />
     </div>
 );
+
+interface Tool {
+    id: number;
+    name: string;
+}
+
+interface ToolsFieldProps {
+    record?: RaRecord;
+}
+
+const ToolsField = ({ record }: ToolsFieldProps) => {
+    const [tools, setTools] = useState<Tool[]>([]);
+    const [loading, setLoading] = useState(true);
+    const dataProvider = useDataProvider();
+
+    useEffect(() => {
+        if (record?.id) {
+            const fetchTools = async () => {
+                try {
+                    const response = await fetch(`http://localhost:5227/api/ServiceTools/service/${record.id}`);
+                    const toolIds = await response.json();
+
+                    if (toolIds && toolIds.length > 0) {
+                        const toolsData = await Promise.all(
+                            toolIds.map(async (toolId: number) => {
+                                const { data } = await dataProvider.getOne('Tools', { id: toolId });
+                                return data as Tool;
+                            })
+                        );
+                        setTools(toolsData);
+                    } else {
+                        setTools([]);
+                    }
+                } catch (error) {
+                    console.error('Error fetching tools:', error);
+                    setTools([]);
+                } finally {
+                    setLoading(false);
+                }
+            };
+
+            fetchTools();
+        }
+    }, [record?.id, dataProvider]);
+
+    if (loading) {
+        return <span>Loading...</span>;
+    }
+
+    if (tools.length === 0) {
+        return <span>No tools</span>;
+    }
+
+    return (
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
+            {tools.map(tool => (
+                <div key={tool.id} style={{
+                    background: '#f0f0f0',
+                    padding: '2px 8px',
+                    borderRadius: '16px',
+                    fontSize: '0.8rem',
+                    color: '#000000',
+                    border: '1px solid #d0d0d0'
+                }}>
+                    {tool.name}
+                </div>
+            ))}
+        </div>
+    );
+};
 
 export const ServiceList = () => (
     <List
@@ -66,6 +140,12 @@ export const ServiceList = () => (
             >
                 <TextField source="categoryName" />
             </ReferenceField>
+
+            <FunctionField
+                label="Tools"
+                render={(record) => <ToolsField record={record} />}
+            />
+
             <EditButton />
             <ShowButton />
             <DeleteButton />

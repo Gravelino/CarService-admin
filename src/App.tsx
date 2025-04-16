@@ -8,7 +8,7 @@ import { CustomerEdit } from "./components/customers/CustomerEdit";
 import { CustomerShow } from "./components/customers/CustomerShow";
 
 import { ServiceList } from "./components/services/ServiceList";
-import { ServiceEdit } from "./components/services/ServiceEdit";
+import { ServiceEdit} from "./components/services/ServiceEdit.tsx";
 import { ServiceCreate } from "./components/services/ServiceCreate";
 import { ServiceShow } from "./components/services/ServiceShow";
 

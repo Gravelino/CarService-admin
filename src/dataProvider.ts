@@ -93,17 +93,21 @@ export const dataProvider: DataProvider = {
     update: async (resource, params) => {
         const url = `${apiUrl}/${resource}/${params.id}`;
         try {
-            const { json } = await httpClient(url, {
+            const response = await httpClient(url, {
                 method: 'PUT',
                 body: JSON.stringify(params.data),
             });
+            const json = response.json;
+
+            if (response.status < 200 || response.status >= 300) {
+                console.error('Помилка оновлення:', json);
+                throw new Error(json.message || 'Помилка оновлення');
+            }
 
             if (json && typeof json === 'object') {
                 return { data: json.data || json };
             }
-            return {
-                data: { ...params.data, id: params.id }
-            };
+            return { data: { ...params.data, id: params.id } };
         } catch (error) {
             console.error('Error in update:', error);
             throw error;
